@@ -3,7 +3,7 @@
 import { createStore } from "vuex";
 
 interface Todo {
-  id: number;
+  id: string;
   title: string;
   description: string;
 }
@@ -34,24 +34,50 @@ export default createStore<State>({
       state.todos = state.todos.filter((todo) => todo.id !== id);
     },
 
+    clearAllTodos(state) {
+      state.todos = [];
+    },
     importCatFacts(state, catFacts: Todo[]) {
       state.todos.push(...catFacts);
     },
   },
 
   actions: {
-    async fetchCatFacts({ commit },catFactsCount) {
+    async fetchCatFacts({ commit }, catFactsCount) {
       console.log(catFactsCount);
       const response = await fetch(
         `https://cat-fact.herokuapp.com/facts/random?amount=${catFactsCount}`
       );
       const data = await response.json();
-      const catFacts: Todo[] = data.map((fact: any, index: number) => ({
-        id: index + 1,
-        title: `Cat Fact ${index + 1}`,
-        description: fact.text,
-      }));
+  
+      let catFacts: Todo[] = [];
+  
+      if (Array.isArray(data)) {
+        catFacts = data.map((fact: any, index: number) => ({
+          id: generateGUID(),
+          title: `Cat Fact ${index + 1}`,
+          description: fact.text,
+        }));
+      } else {
+        catFacts.push({
+          id: generateGUID(),
+          title: "Cat Fact 1",
+          description: data.text,
+        });
+      }
+  
       commit("importCatFacts", catFacts);
     },
   },
+  
+
+  
 });
+
+export function generateGUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0,
+        v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
